@@ -2,7 +2,7 @@ name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -10,4 +10,22 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - run: cargo build --no-default-features --features native --release
+      - run: cargo test --no-default-features --features native --release
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: 'latest'
+      - run: wasm-pack build
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - run: cd pkg/
+      - run: ls
+    
+
 

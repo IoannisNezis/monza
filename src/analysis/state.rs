@@ -2,10 +2,6 @@ use std::collections::HashMap;
 
 use log::{error, info};
 
-#[cfg(feature = "native")]
-use tree_sitter::{Parser, Tree};
-
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::{Parser, Tree};
 
 use crate::lsp::textdocument::TextDocumentItem;
@@ -54,9 +50,9 @@ impl AnalysisState {
         }
     }
 
-    pub(crate) fn documents(&self) -> impl Iterator<Item = &String> {
-        self.documents.keys()
-    }
+    // pub(crate) fn documents(&self) -> impl Iterator<Item = &String> {
+    //     self.documents.keys()
+    // }
 
     pub(crate) fn get_state(&self, uri: &String) -> Option<&(TextDocumentItem, Option<Tree>)> {
         self.documents.get(uri)

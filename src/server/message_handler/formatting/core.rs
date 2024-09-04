@@ -1,10 +1,6 @@
 use std::{collections::HashSet, usize};
 
 use log::{error, warn};
-#[cfg(feature = "native")]
-use tree_sitter::{Node, Query, QueryCursor, Tree, TreeCursor};
-
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::{Node, Query, QueryCursor, Tree, TreeCursor};
 
 use crate::lsp::{

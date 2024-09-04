@@ -1,7 +1,4 @@
 use indoc::indoc;
-#[cfg(feature = "native")]
-use tree_sitter::Parser;
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::Parser;
 
 use crate::server::message_handler::formatting::format_helper;

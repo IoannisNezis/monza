@@ -5,10 +5,6 @@ use std::collections::HashSet;
 use log::{error, info};
 pub use state::*;
 
-#[cfg(feature = "native")]
-use tree_sitter::{Node, Query, QueryCursor};
-
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::{Node, Query, QueryCursor};
 
 use crate::lsp::textdocument::{Position, Range};

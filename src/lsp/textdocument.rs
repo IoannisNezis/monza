@@ -3,10 +3,6 @@ use std::fmt;
 use log::error;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "native")]
-use tree_sitter::{Node, Point};
-
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::{Node, Point};
 
 use super::TextDocumentContentChangeEvent;

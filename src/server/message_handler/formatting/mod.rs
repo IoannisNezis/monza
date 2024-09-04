@@ -3,10 +3,6 @@ mod utils;
 use core::*;
 use log::{error, info};
 
-#[cfg(feature = "native")]
-use tree_sitter::Parser;
-
-#[cfg(feature = "wasm")]
 use tree_sitter_c2rust::Parser;
 use wasm_bindgen::prelude::wasm_bindgen;
 
