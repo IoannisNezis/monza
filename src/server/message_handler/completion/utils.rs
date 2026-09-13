@@ -211,8 +211,6 @@ pub(super) async fn fetch_online_completions(
         (url, query, timeout_ms, method)
     };
 
-    tracing::debug!("Completion Query: \"{query_template}\"\n{query}");
-
     let started = get_timestamp_ms();
     let result = execute_query(
         server_rc.clone(),
@@ -260,7 +258,6 @@ pub(super) async fn fetch_online_completions(
         );
         return Err(CompletionError::Resolve(NO_BINDINGS_MESSAGE.to_string()));
     };
-    tracing::info!("Result size: {}", bindings.len());
 
     let mut server = server_rc.lock().await;
     report_completion_query(
