@@ -517,7 +517,9 @@ pub(super) fn reduce_path(
                 Some(path.text().to_string())
             }
         }
-        _ => panic!("unknown path kind"),
+        // WARNING: an unexpected path kind means the parse tree does not look like a
+        //          path at all -> no local context instead of aborting.
+        _ => None,
     }
 }
 
@@ -746,6 +748,49 @@ mod test {
         assert!(!matches_search_term("FILTER", Some("ILTER")));
         // "TER" is not a prefix of "FILTER"
         assert!(!matches_search_term("FILTER", Some("TER")));
+    }
+
+    /// Reduce the verb of the (only) triple in `query` at `offset`.
+    fn reduce_verb_of_first_triple(query: &str, offset: u32) -> Option<String> {
+        let (tree, _) = parse_query(query);
+        let query_unit = QueryUnit::cast(tree).unwrap();
+        let triples = query_unit
+            .select_query()
+            .unwrap()
+            .where_clause()
+            .unwrap()
+            .group_graph_pattern()
+            .unwrap()
+            .triple_blocks()
+            .first()
+            .unwrap()
+            .triples();
+        let triple = triples.first().unwrap();
+        reduce_path(
+            &triple.subject().unwrap().text(),
+            Some(
+                &triple
+                    .properties_list_path()
+                    .unwrap()
+                    .properties()
+                    .last()
+                    .unwrap()
+                    .verb,
+            ),
+            "[]",
+            offset.into(),
+        )
+    }
+
+    #[test]
+    fn reduce_unknown_path_kind_returns_none() {
+        // NOTE: a variable predicate is a VerbSimple, which is castable to `Path`
+        // but is not a path -> no local context. This used to panic.
+        //                                      0123456789012345678
+        assert_eq!(
+            reduce_verb_of_first_triple("Select * { ?a ?p ?b }", 16),
+            None
+        );
     }
 
     #[test]
