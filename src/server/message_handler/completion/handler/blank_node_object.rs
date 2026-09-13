@@ -25,12 +25,22 @@ pub async fn completions(
 }
 
 fn local_context(environment: &CompletionEnvironment) -> Option<String> {
-    if let CompletionLocation::BlankNodeObject(ref blank_node_props) = environment.location {
-        Some(format!(
-            "[] {} ?qls_entity",
-            blank_node_props.property_list()?.text(),
-        ))
-    } else {
-        None
+    let CompletionLocation::BlankNodeObject(blank_node_props) = &environment.location else {
+        return None;
+    };
+    let property_list = blank_node_props.property_list()?;
+    let anchor_range = environment.anchor_token.as_ref()?.text_range();
+    // NOTE: the anchor token has to be inside the property list, otherwise there is no
+    //       meaningful local context to build.
+    if !property_list
+        .syntax()
+        .text_range()
+        .contains_range(anchor_range)
+    {
+        return None;
     }
+    // INFO: clip the property list at the anchor token, everything after the cursor is not
+    //       part of the context.
+    let clipped_text = property_list.text_until(anchor_range.end());
+    Some(format!("[] {} ?qls_entity", clipped_text))
 }
