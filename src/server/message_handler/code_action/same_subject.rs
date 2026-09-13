@@ -18,7 +18,7 @@ use crate::{
     },
 };
 use ll_sparql_parser::{
-    SyntaxNode,
+    Direction, SyntaxNode,
     ast::{AstNode, QueryUnit, Triple},
     syntax_kind::SyntaxKind,
 };
@@ -131,9 +131,9 @@ pub(crate) fn contract_triples(
             .unwrap_or(range.start());
         let end = triple
             .syntax()
-            .next_sibling_or_token_by_kind(&|kind| {
-                matches!(kind, SyntaxKind::WHITESPACE | SyntaxKind::Dot)
-            })
+            .siblings_with_tokens(Direction::Next)
+            .skip(1)
+            .find(|element| matches!(element.kind(), SyntaxKind::WHITESPACE | SyntaxKind::Dot))
             .map(|next| {
                 next.next_sibling_or_token()
                     .and_then(|next_next| {

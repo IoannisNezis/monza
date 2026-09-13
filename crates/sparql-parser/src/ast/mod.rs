@@ -11,19 +11,11 @@ pub struct QueryUnit {
 
 impl QueryUnit {
     pub fn select_query(&self) -> Option<SelectQuery> {
-        SelectQuery::cast(
-            self.syntax
-                .first_child()?
-                .first_child_by_kind(&SelectQuery::can_cast)?,
-        )
+        SelectQuery::cast(self.syntax.first_child()?.first_child()?)
     }
 
     pub fn prologue(&self) -> Option<Prologue> {
-        Prologue::cast(
-            self.syntax
-                .first_child()?
-                .first_child_by_kind(&Prologue::can_cast)?,
-        )
+        Prologue::cast(self.syntax.first_child()?.first_child()?)
     }
 
     /// The first child of the unit that is not the `Prologue`.
@@ -49,11 +41,7 @@ impl UpdateUnit {
     /// NOTE: Chained updates (`... ; ...`) nest an `Update` inside an `Update`,
     ///       each carrying its own `Prologue`. This returns the outermost one.
     pub fn prologue(&self) -> Option<Prologue> {
-        Prologue::cast(
-            self.syntax
-                .first_child()?
-                .first_child_by_kind(&Prologue::can_cast)?,
-        )
+        Prologue::cast(self.syntax.first_child()?.first_child()?)
     }
 
     /// The first child of the unit that is not the `Prologue`.
@@ -162,7 +150,8 @@ impl PrefixDeclaration {
     pub fn prefix(&self) -> Option<String> {
         Some(
             self.syntax
-                .first_child_or_token_by_kind(&|kind| kind == SyntaxKind::PNAME_NS)?
+                .children_with_tokens()
+                .find(|element| element.kind() == SyntaxKind::PNAME_NS)?
                 .to_string()
                 .split_once(":")
                 .expect("Every PNAME_NS should contain ':' at the end")
@@ -174,7 +163,8 @@ impl PrefixDeclaration {
     pub fn raw_uri_prefix(&self) -> Option<String> {
         let s = self
             .syntax
-            .first_child_or_token_by_kind(&|kind| kind == SyntaxKind::IRIREF)?
+            .children_with_tokens()
+            .find(|element| element.kind() == SyntaxKind::IRIREF)?
             .to_string();
         (s.len() >= 2).then_some(s[1..(s.len() - 1)].to_string())
     }
@@ -182,7 +172,8 @@ impl PrefixDeclaration {
     pub fn uri_prefix(&self) -> Option<String> {
         Some(
             self.syntax
-                .first_child_or_token_by_kind(&|kind| kind == SyntaxKind::IRIREF)?
+                .children_with_tokens()
+                .find(|element| element.kind() == SyntaxKind::IRIREF)?
                 .to_string(),
         )
     }
@@ -195,10 +186,18 @@ pub struct SelectQuery {
 
 impl SelectQuery {
     pub fn where_clause(&self) -> Option<WhereClause> {
-        WhereClause::cast(self.syntax.first_child_by_kind(&WhereClause::can_cast)?)
+        WhereClause::cast(
+            self.syntax
+                .children()
+                .find(|child| WhereClause::can_cast(child.kind()))?,
+        )
     }
     pub fn select_clause(&self) -> Option<SelectClause> {
-        SelectClause::cast(self.syntax.first_child_by_kind(&SelectClause::can_cast)?)
+        SelectClause::cast(
+            self.syntax
+                .children()
+                .find(|child| SelectClause::can_cast(child.kind()))?,
+        )
     }
     pub fn variables(&self) -> Vec<Var> {
         if let Some(where_clause) = self.where_clause() {
@@ -477,14 +476,16 @@ pub struct GroupGraphPattern {
 impl GroupGraphPattern {
     pub fn triple_blocks(&self) -> Vec<TriplesBlock> {
         self.syntax()
-            .first_child_by_kind(&|kind| kind == SyntaxKind::GroupGraphPatternSub)
+            .children()
+            .find(|child| child.kind() == SyntaxKind::GroupGraphPatternSub)
             .map(|ggp| ggp.children().filter_map(TriplesBlock::cast).collect())
             .unwrap_or_default()
     }
 
     pub fn group_pattern_not_triples(&self) -> Vec<GraphPatternNotTriples> {
         self.syntax()
-            .first_child_by_kind(&|kind| kind == SyntaxKind::GroupGraphPatternSub)
+            .children()
+            .find(|child| child.kind() == SyntaxKind::GroupGraphPatternSub)
             .map(|ggp| {
                 ggp.children()
                     .filter_map(GraphPatternNotTriples::cast)

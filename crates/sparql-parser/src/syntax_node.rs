@@ -1,5 +1,7 @@
 use crate::SyntaxKind::{self, *};
 
+pub use rowan::Direction;
+
 #[allow(dead_code)]
 pub type SyntaxNode = rowan::SyntaxNode<Sparql>;
 #[allow(dead_code)]

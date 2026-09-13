@@ -10,6 +10,7 @@
 //! ?s rdfs:label ?label Filter(Lange(?label) = "en"
 
 use ll_sparql_parser::{
+    Direction,
     ast::{AstNode, Var},
     syntax_kind::SyntaxKind,
 };
@@ -25,7 +26,9 @@ pub(super) fn code_action(var: &Var, document: &TextDocumentItem) -> Option<Code
     let position = Position::from_byte_index(
         triple
             .syntax()
-            .next_sibling_or_token_by_kind(&|kind| kind == SyntaxKind::Dot)
+            .siblings_with_tokens(Direction::Next)
+            .skip(1)
+            .find(|element| element.kind() == SyntaxKind::Dot)
             .map(|dot| dot.text_range().end())
             .unwrap_or(triple.syntax().text_range().end()),
         &document.text,
