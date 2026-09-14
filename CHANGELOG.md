@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- predicate completions inside a blank node property list (`?s :p [ | ]`) now
+  take the surrounding query into account: the completion query is constrained
+  by the triples connected to the enclosing subject, including the other
+  properties of the enclosing triple. A context insensitive query is dispatched
+  alongside it as a fallback.
+
 ## [3.9.0] - 2026-09-09
 
 ### Added
