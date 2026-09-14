@@ -64,7 +64,8 @@ pub(super) fn context(location: &CompletionLocation) -> Option<Context> {
             let var = inline_data.visible_variables().get(*index)?.text();
             compute_context(inline_data, HashSet::from([var]))
         }
-        CompletionLocation::BlankNodeProperty(blank_node_property_list) => {
+        CompletionLocation::BlankNodeProperty(blank_node_property_list)
+        | CompletionLocation::BlankNodeObject(blank_node_property_list) => {
             let triple = blank_node_property_list.triple()?;
             let variables = triple
                 .visible_variables()
@@ -402,6 +403,25 @@ mod test {
              "#
         };
         let position = Position::new(2, 11);
+        let context = compute_context_from_cursor_position(input, position);
+        assert_eq!(
+            serde_json::to_value(&context).unwrap().as_str().unwrap(),
+            indoc! {
+              r#"{?n1 <b> <c>}"#
+            }
+        );
+    }
+
+    #[test]
+    fn blank_node_object_context() {
+        let input = indoc! {
+            // 01234567890123456
+            r#"Select * {
+               ?n1 <b> <c> .
+               ?n1 <p1> [ <p2>  ]}
+             "#
+        };
+        let position = Position::new(2, 16);
         let context = compute_context_from_cursor_position(input, position);
         assert_eq!(
             serde_json::to_value(&context).unwrap().as_str().unwrap(),

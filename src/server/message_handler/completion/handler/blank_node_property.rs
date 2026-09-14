@@ -114,7 +114,7 @@ fn expect_completion_location(
 ///
 /// `None` when the blank node is not the direct object of a triple, e.g. when it
 /// is the subject, nested in another blank node or an element of a collection.
-fn context_join(prop_list: &BlankPropertyList) -> Option<String> {
+pub(super) fn context_join(prop_list: &BlankPropertyList) -> Option<String> {
     // NOTE: walk up to the object list the blank node is an element of.
     //       Anything else on the way up means the blank node is not the object
     //       of a triple with a subject we could join against.
@@ -162,7 +162,7 @@ fn context_join(prop_list: &BlankPropertyList) -> Option<String> {
 ///
 /// NOTE: these are needed because the enclosing triple is the trigger node of the
 ///       context computation and therefore excluded from the context itself.
-fn sibling_properties(prop_list: &BlankPropertyList) -> Option<String> {
+pub(super) fn sibling_properties(prop_list: &BlankPropertyList) -> Option<String> {
     let blank_node_range = prop_list.syntax().text_range();
     let triple = prop_list.triple()?;
     let subject = triple.subject()?.text();
