@@ -64,6 +64,15 @@ pub(super) fn context(location: &CompletionLocation) -> Option<Context> {
             let var = inline_data.visible_variables().get(*index)?.text();
             compute_context(inline_data, HashSet::from([var]))
         }
+        CompletionLocation::BlankNodeProperty(blank_node_property_list) => {
+            let triple = blank_node_property_list.triple()?;
+            let variables = triple
+                .visible_variables()
+                .iter()
+                .map(|var| var.text())
+                .collect();
+            compute_context(&triple, variables)
+        }
         _ => None,
     }
 }
@@ -185,18 +194,19 @@ mod test {
     use crate::server::{
         lsp::textdocument::Position,
         message_handler::completion::environment::{
-            get_anchor_token, get_continuations, get_location, get_trigger_token,
+            get_location, get_trigger_token, resolve_anchor,
         },
     };
 
     use super::{super::CompletionLocation, Context, context};
 
     fn compute_context_from_cursor_position(input: &str, cursor: Position) -> Context {
-        let (root, _) = parse_query(input);
         let offset = cursor.byte_index(input).unwrap();
-        let trigger_token = get_trigger_token(&root, offset).unwrap();
-        let anchor = get_anchor_token(trigger_token);
-        let continuations = get_continuations(&root, &anchor);
+        // NOTE: the server parses the document truncated at the cursor, so the test
+        // helper has to do the same to see the same tree.
+        let (root, _) = parse_query(&input[..usize::from(offset)]);
+        let trigger_token = get_trigger_token(&root, offset);
+        let (anchor, continuations) = resolve_anchor(&root, trigger_token);
         let location = get_location(&anchor, &continuations, offset);
         context(&location).unwrap()
     }
@@ -378,6 +388,25 @@ mod test {
                  ?n4 <> ?n9 .
                  ?n5 ?n6 "dings" .
                  ?n4 <> ?n2}"#
+            }
+        );
+    }
+
+    #[test]
+    fn blank_node_context() {
+        let input = indoc! {
+            // 01234567890123
+            r#"Select * {
+               ?n1 <b> <c> .
+               ?n1 <p1> [  ]}
+             "#
+        };
+        let position = Position::new(2, 11);
+        let context = compute_context_from_cursor_position(input, position);
+        assert_eq!(
+            serde_json::to_value(&context).unwrap().as_str().unwrap(),
+            indoc! {
+              r#"{?n1 <b> <c>}"#
             }
         );
     }
@@ -583,12 +612,11 @@ mod test {
         };
         // NOTE: cursor after two DataBlockValues — index 2 has no corresponding variable,
         // so context() should return None.
-        let (root, _) = parse_query(input);
         let position = Position::new(2, 36);
         let offset = position.byte_index(input).unwrap();
-        let trigger_token = get_trigger_token(&root, offset).unwrap();
-        let anchor = get_anchor_token(trigger_token);
-        let continuations = get_continuations(&root, &anchor);
+        let (root, _) = parse_query(&input[..usize::from(offset)]);
+        let trigger_token = get_trigger_token(&root, offset);
+        let (anchor, continuations) = resolve_anchor(&root, trigger_token);
         let location = get_location(&anchor, &continuations, offset);
         assert!(
             matches!(&location, CompletionLocation::InlineData((_, 2))),
