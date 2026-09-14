@@ -660,9 +660,7 @@ pub struct BlankPropertyList {
 impl BlankPropertyList {
     pub fn triple(&self) -> Option<Triple> {
         match self.syntax.kind() {
-            SyntaxKind::BlankNodePropertyListPath => {
-                todo!()
-            }
+            SyntaxKind::BlankNodePropertyListPath => self.syntax.ancestors().find_map(Triple::cast),
             SyntaxKind::BlankNodePropertyList => {
                 todo!()
             }
