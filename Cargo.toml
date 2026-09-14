@@ -1,6 +1,6 @@
 [package]
 name = "qlue-ls"
-version = "3.9.0"
+version = "3.10.0"
 edition = "2024"
 authors = ["Ioannis Nezis <ioannis@nezis.de>"]
 description = "A language server for SPARQL"
