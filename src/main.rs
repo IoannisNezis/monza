@@ -63,7 +63,7 @@ enum Command {
         #[arg(short, long)]
         check: bool,
         /// Omit to read from stdin
-        path: Option<PathBuf>,
+        paths: Vec<PathBuf>,
     },
     /// Watch the logs (linux users only)
     Logs,
@@ -121,54 +121,11 @@ fn main() {
             }));
         }
         Command::Format {
-            path,
+            paths,
             writeback,
             check,
         } => {
-            if let Some(path) = path {
-                match File::open(path.clone()) {
-                    Ok(mut file) => {
-                        let mut contents = String::new();
-                        file.read_to_string(&mut contents)
-                            .expect("Could not read file");
-                        match format_raw(contents.clone()) {
-                            Ok(formatted_contents) => {
-                                let unchanged = formatted_contents == contents;
-                                if check {
-                                    if unchanged {
-                                        println!("{} is already formatted", path.to_string_lossy());
-                                        exit(0);
-                                    } else {
-                                        println!("{} would be reformatted", path.to_string_lossy());
-                                        exit(1);
-                                    }
-                                }
-                                if writeback {
-                                    if unchanged {
-                                        println!("{} left unchanged", path.to_string_lossy());
-                                    } else {
-                                        let mut file = OpenOptions::new()
-                                            .write(true)
-                                            .truncate(true)
-                                            .append(false)
-                                            .open(path.clone())
-                                            .expect("Could not write to file");
-                                        file.write_all(formatted_contents.as_bytes())
-                                            .expect("Unable to write");
-                                        println!("{} reformatted", path.to_string_lossy());
-                                    }
-                                } else {
-                                    println!("{}", formatted_contents);
-                                }
-                            }
-                            Err(e) => panic!("Error during formatting:\n{}", e),
-                        }
-                    }
-                    Err(e) => {
-                        panic!("Could not open file: {}", e)
-                    }
-                };
-            } else {
+            if paths.is_empty() {
                 // No path was given -- read from stdin
                 let mut buffer = Vec::new();
                 io::stdin()
@@ -184,6 +141,58 @@ fn main() {
                         print!("{}", res);
                     }
                     Err(e) => panic!("Error during formatting:\n{}", e),
+                }
+            }
+            {
+                for path in paths {
+                    match File::open(path.clone()) {
+                        Ok(mut file) => {
+                            let mut contents = String::new();
+                            file.read_to_string(&mut contents)
+                                .expect("Could not read file");
+                            match format_raw(contents.clone()) {
+                                Ok(formatted_contents) => {
+                                    let unchanged = formatted_contents == contents;
+                                    if check {
+                                        if unchanged {
+                                            println!(
+                                                "{} is already formatted",
+                                                path.to_string_lossy()
+                                            );
+                                            exit(0);
+                                        } else {
+                                            println!(
+                                                "{} would be reformatted",
+                                                path.to_string_lossy()
+                                            );
+                                            exit(1);
+                                        }
+                                    }
+                                    if writeback {
+                                        if unchanged {
+                                            println!("{} left unchanged", path.to_string_lossy());
+                                        } else {
+                                            let mut file = OpenOptions::new()
+                                                .write(true)
+                                                .truncate(true)
+                                                .append(false)
+                                                .open(path.clone())
+                                                .expect("Could not write to file");
+                                            file.write_all(formatted_contents.as_bytes())
+                                                .expect("Unable to write");
+                                            println!("{} reformatted", path.to_string_lossy());
+                                        }
+                                    } else {
+                                        println!("{}", formatted_contents);
+                                    }
+                                }
+                                Err(e) => panic!("Error during formatting:\n{}", e),
+                            }
+                        }
+                        Err(e) => {
+                            panic!("Could not open file: {}", e)
+                        }
+                    };
                 }
             }
         }
